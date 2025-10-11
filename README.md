@@ -34,6 +34,7 @@ It provides:
 
 ## Architecture
 > The VADA framework consists of two major pipelines:
+
 > 1️⃣ **Data Generation Pipeline** → Scenario + Question + Answer  
 > 2️⃣ **Evaluation Pipeline** → Bayesian reliability-weighted ensemble
 
@@ -62,6 +63,7 @@ Each item describes a neutral moral or social situation.
 ### 🔹 4. `sampled_700.jsonl`
 Represents the **VADA-H700** validation benchmark (700 human-verified samples).
 Used for model comparison, human agreement analysis, and reliability testing.
+
 
 
 
