@@ -1,4 +1,4 @@
-# VADA-tool 🧠  
+# VADA-tool
 *A Multicultural Benchmark and Evaluation Toolkit for Value-Aware Alignment in Large Language Models (LLMs)*  
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -63,4 +63,5 @@ Each item describes a neutral moral or social situation.
 Represents the **VADA-H700** validation benchmark (700 human-verified samples).
 
 Used for model comparison, human agreement analysis, and reliability testing.
+
 
