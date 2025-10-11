@@ -6,7 +6,7 @@
 
 ---
 
-## 🌍 Overview
+## Overview
 VADA is designed to evaluate how **Large Language Models (LLMs)** align with **diverse cultural and moral value systems**, spanning:
 
 - **Chinese Socialist Core Values (SCV)**  
@@ -21,7 +21,7 @@ It provides:
 
 ---
 
-## 🧰 Features
+## Features
 | Component               | Description                                                  |
 | ----------------------- | ------------------------------------------------------------ |
 | `SceneGeneration.py`    | Generates culturally grounded scenarios covering 25 value dimensions |
@@ -32,14 +32,14 @@ It provides:
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 > The VADA framework consists of two major pipelines:
 > 1️⃣ **Data Generation Pipeline** → Scenario + Question + Answer  
 > 2️⃣ **Evaluation Pipeline** → Bayesian reliability-weighted ensemble
 
 
 
-## 📦 Dataset 
+## Dataset 
 
 The following JSON/JSONL files represent the main intermediate and final datasets in the VADA-tool pipeline.
 
@@ -61,7 +61,7 @@ Each item describes a neutral moral or social situation.
 
 ### 🔹 4. `sampled_700.jsonl`
 Represents the **VADA-H700** validation benchmark (700 human-verified samples).
-
 Used for model comparison, human agreement analysis, and reliability testing.
+
 
 
