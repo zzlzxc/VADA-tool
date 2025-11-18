@@ -6,6 +6,8 @@ from openai import OpenAI
 import logging
 import re
 from tqdm import tqdm
+import csv
+from tqdm import tqdm
 
 client = OpenAI(
     base_url="",
@@ -118,20 +120,16 @@ class BayesianEvaluator:
         for i in range(dim_count):
             vote = defaultdict(float)
 
-            # 每个 evaluator 对当前维度的投票（带权重）
             for evaluator in self.evaluators:
                 pred = predictions[evaluator][i]
                 dim = dims[i]
                 w = weights[evaluator][system_name][dim]
 
                 vote[pred] += w
-
-            # 决策最大票数对应标签
             if vote:
                 final_label = max(vote, key=vote.get)
                 final_scores.append(final_label)
 
-                # 更新每个 evaluator 在该维度的可信度
                 for evaluator in self.evaluators:
                     dim = dims[i]
                     self.update_weights(evaluator, system_name, dim, predictions[evaluator][i], final_label)
@@ -269,14 +267,12 @@ def evaluate_with_bayesian_ensemble_by_system(
             result[f"{system.lower()}_scores"] = final_scores
             bayes_system_evaluator.print_weights(system=system, qa_id=qa_id)
 
-        # 追加写入，确保每条数据完成即保存
         with open(output_path, "a", encoding="utf-8") as fout:
             fout.write(json.dumps(result, ensure_ascii=False) + "\n")
 
-        # 可选：实时保存alpha_beta状态，避免权重更新丢失
         bayes_system_evaluator.save_alpha_beta("updated_alpha_beta.json")
 
-    print(f"✅ All-system Bayesian ensemble complete. Results saved to: {output_path}")
+    print(f"All-system Bayesian ensemble complete. Results saved to: {output_path}")
 
 
 def clean_output(text):
@@ -288,6 +284,68 @@ def clean_output(text):
         print(f"[Clean Warning] Could not extract clean JSON from: {text}")
         return "[]"
 
+def initialize_with_human_labels(csv_path, scorer_list, bayes_evaluator, save_path="initialized_alpha_beta.json"):
+    def to_int(v):
+        """只做 -1.0→-1, 0.0→0, 1.0→1 的简单转换"""
+        if v is None or str(v).strip() == "":
+            return 0
+        s = str(v).strip()
+        if s in ["-1.0", "-1"]:
+            return -1
+        if s in ["0.0", "0"]:
+            return 0
+        if s in ["1.0", "1"]:
+            return 1
+        try:
+            return int(float(s))
+        except:
+            return 0
+
+    sys_dims = bayes_evaluator.system_dimensions
+    evaluators = bayes_evaluator.evaluators
+
+    scv_map = {dim: dim for dim in sys_dims["SCV"]}
+    euv_map = {
+        "Human Dignity": "Human Dignity",
+        "Freedom": "Freedom_E",
+        "Democracy": "Democracy_E",
+        "Equality": "Equality_E",
+        "Rule of Law": "Rule of Law_E",
+        "Human Rights": "Human Rights"
+    }
+    mev_map = {dim: dim for dim in sys_dims["MEV"]}
+
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+
+    for idx, row in enumerate(tqdm(rows, desc="Initializing with human labels"), start=1):
+        question = row.get("question", "")
+        answer = row.get("answer", "")
+
+        golds = {
+            "SCV": [to_int(row.get(scv_map[d])) for d in sys_dims["SCV"]],
+            "EUV": [to_int(row.get(euv_map[d])) for d in sys_dims["EUV"]],
+            "MEV": [to_int(row.get(mev_map[d])) for d in sys_dims["MEV"]],
+        }
+
+        for sys_name in ["SCV", "EUV", "MEV"]:
+            dims = sys_dims[sys_name]
+            gold_vec = golds[sys_name]
+
+            for scorer, ev_name in zip(scorer_list, evaluators):
+                pred_vec = scorer.score_system(question, answer, sys_name)
+                for dim, gold, pred in zip(dims, gold_vec, pred_vec):
+                    if pred == gold:
+                        bayes_evaluator.alpha[ev_name][sys_name][dim] += 1
+                    else:
+                        bayes_evaluator.beta[ev_name][sys_name][dim] += 1
+
+        if idx % 5 == 0:
+            bayes_evaluator.save_alpha_beta(save_path)
+
+    bayes_evaluator.save_alpha_beta(save_path)
+    print(f"Bayesian weights initialized using human labels and saved to {save_path}")
 
 if __name__ == "__main__":
 
@@ -322,3 +380,4 @@ if __name__ == "__main__":
     )
 
     bayes.save_alpha_beta("updated_alpha_beta.json")
+
